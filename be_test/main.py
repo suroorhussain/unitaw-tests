@@ -1,5 +1,7 @@
 from fastapi import FastAPI
 
+from models import Event
+
 EVENTS = [
     {"id": 1, "title": "Event 1", "description": "Description of Event 1", "location": "Location 1", "featured": True, "image": "https://example.com/event1.jpg", "datelist": ["2024-07-01", "2024-07-02"]},
     {"id": 2, "title": "Event 2", "description": "Description of Event 2", "location": "Location 2", "featured": False, "image": "https://example.com/event2.jpg", "datelist": ["2024-08-01", "2024-08-02"]},
@@ -19,6 +21,13 @@ async def root():
 @app.get("/events")
 async def get_events(limit: int|None = 10, offset: int|None = 0):
     return {"data": EVENTS[offset:offset+limit]}
+
+@app.post("/events")
+async def create_event(event: Event):
+    event_data = event.model_dump()
+    event_data["id"] = len(EVENTS) + 1
+    EVENTS.append(event_data)
+    return {"data": event_data}
 
 @app.get("/events/{event_id}")
 async def get_event(event_id: int):
