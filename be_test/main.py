@@ -17,7 +17,7 @@ async def root():
     return {"message": "Hello world!"}
 
 @app.get("/events")
-async def get_events(limit: int = 10, offset: int = 0):
+async def get_events(limit: int|None = 10, offset: int|None = 0):
     return {"data": EVENTS[offset:offset+limit]}
 
 @app.get("/events/{event_id}")
