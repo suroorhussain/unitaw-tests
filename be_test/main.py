@@ -4,7 +4,6 @@ import db
 
 from fastapi import FastAPI, Depends, HTTPException
 from fastapi.security import OAuth2PasswordRequestForm
-from models import Event, EventResponse, User, UserInDB
 from typing import Annotated    
 
 app = FastAPI()
