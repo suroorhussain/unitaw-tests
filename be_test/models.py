@@ -8,3 +8,6 @@ class Event(BaseModel):
     featured: bool
     image: HttpUrl | None = None
     datelist: list[date]
+
+class EventResponse(Event):
+    id: int
