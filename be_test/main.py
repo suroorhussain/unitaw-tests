@@ -18,7 +18,7 @@ async def root():
 
 @app.get("/events")
 async def get_events(session: db.SessionDep, limit: int|None = 10, offset: int|None = 0) -> list[db.EventDetail]:
-    events = session.exec(select(db.Event).offset(offset).limit(limit)).all()
+    events = session.exec(select(db.Event).offset(offset).limit(limit).order_by(db.Event.date)).all()
     return events
 
 @app.post("/events")
