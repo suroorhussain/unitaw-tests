@@ -1,5 +1,5 @@
 from datetime import date
-from pydantic import BaseModel, HttpUrl
+from pydantic import BaseModel, HttpUrl, EmailStr
 
 class Event(BaseModel):
     title: str
@@ -11,3 +11,9 @@ class Event(BaseModel):
 
 class EventResponse(Event):
     id: int
+
+class User(BaseModel):
+    email: EmailStr
+
+class UserInDB(User):
+    hashed_password: str
