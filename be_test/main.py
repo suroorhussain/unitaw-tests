@@ -48,9 +48,20 @@ async def get_event(event_id: int, session: db.SessionDep) -> db.EventDetail:
     return event
 
 @app.post("/login")
-async def login(form_data: Annotated[OAuth2PasswordRequestForm, Depends()]):
-    user = auth.authenticate_user(form_data.username, form_data.password)
+async def login(form_data: Annotated[OAuth2PasswordRequestForm, Depends()], session: db.SessionDep):
+    user = auth.authenticate_user(form_data.username, form_data.password, session)
     if not user:
         raise HTTPException(status_code=400, detail="Incorrect username or password")
     access_token = auth.create_access_token(data={"sub": user.email})
     return auth.Token(access_token=access_token, token_type="bearer")
+
+@app.post("/register")
+async def register(user: db.UserCreate, session: db.SessionDep) -> db.UserBase:
+    existing_user = auth.get_user(user.email, session)
+    if existing_user:
+        raise HTTPException(status_code=400, detail="Email already registered")
+    db_user = db.User(email=user.email, hashed_password=auth.hash_password(user.password))
+    session.add(db_user)
+    session.commit()
+    session.refresh(db_user)
+    return db_user

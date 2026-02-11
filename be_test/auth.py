@@ -1,10 +1,11 @@
+import db
+import jwt
 
 from fastapi import Depends, HTTPException
 from fastapi.security import OAuth2PasswordBearer
 from typing import Annotated
-from models import User, UserInDB
+from sqlmodel import select
 from pwdlib import PasswordHash
-import jwt
 from pydantic import BaseModel
 from datetime import datetime, timedelta, timezone
 
@@ -20,24 +21,10 @@ class Token(BaseModel):
 password_hash = PasswordHash.recommended()
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="login")
 
-fake_users_db = {
-    "johndoe@example.com": {
-        "full_name": "John Doe",
-        "email": "johndoe@example.com",
-        "hashed_password": "$argon2id$v=19$m=65536,t=3,p=4$g9bEMFKjuA8rogCK6Fftqw$oNukL5pdhQvs/Rf/XBP3jQ8DBKgvQ1izurX8dyBQ3+o",
-        "disabled": False,
-    },
-    "alice@example.com": {
-        "full_name": "Alice Wonderson",
-        "email": "alice@example.com",
-        "hashed_password": "$argon2id$v=19$m=65536,t=3,p=4$YWCDJ8UbqXcVr+FfBr0UDg$jdWDjSVT+uMAFOAlapHdKYRPrxU0Jm/5gvkQ9HFjH9Y",
-        "disabled": True,
-    },
-}
-def get_user(username:str):
-    if username in fake_users_db:
-        user_dict = fake_users_db[username]
-        return UserInDB(**user_dict)
+def get_user(username:str, session: db.Session):
+    user = session.exec(select(db.User).where(db.User.email == username)).first()
+    if user:
+        return user
 
 def verify_password(plain_password, hashed_password):
     return password_hash.verify(plain_password, hashed_password)
@@ -55,15 +42,15 @@ def create_access_token(data: dict, expires_delta: timedelta | None = None):
     encoded_jwt = jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
     return encoded_jwt
 
-def authenticate_user(username:str, password:str):
-    user = get_user(username)
+def authenticate_user(username:str, password:str, session: db.Session):
+    user = get_user(username, session)
     if not user:
         return False
     if not verify_password(password, user.hashed_password):
         return False
     return user
 
-async def get_current_user(token: Annotated[str, Depends(oauth2_scheme)]):
+async def get_current_user(token: Annotated[str, Depends(oauth2_scheme)], session: db.SessionDep):
     try:
         payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
         username = payload.get("sub")
@@ -71,7 +58,7 @@ async def get_current_user(token: Annotated[str, Depends(oauth2_scheme)]):
             raise HTTPException(status_code=401, detail="Invalid authentication credentials")
     except jwt.exceptions.InvalidTokenError:
         raise HTTPException(status_code=401, detail="Invalid authentication credentials")
-    user = get_user(username)
+    user = get_user(username, session)
     if user is None:
         raise HTTPException(status_code=401, detail="Invalid authentication credentials")
     return user
