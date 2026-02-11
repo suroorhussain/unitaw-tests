@@ -1,9 +1,10 @@
-from pydantic import BaseModel
+from datetime import date
+from pydantic import BaseModel, HttpUrl
 
 class Event(BaseModel):
     title: str
     description: str
     location: str
     featured: bool
-    image: str
-    datelist: list[str]
+    image: HttpUrl | None = None
+    datelist: list[date]
