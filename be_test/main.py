@@ -17,8 +17,11 @@ async def root():
     return {"message": "Hello world!"}
 
 @app.get("/events")
-async def get_events(session: db.SessionDep, limit: int|None = 10, offset: int|None = 0) -> list[db.EventDetail]:
-    events = session.exec(select(db.Event).offset(offset).limit(limit).order_by(db.Event.date)).all()
+async def get_events(session: db.SessionDep, limit: int|None = 10, offset: int|None = 0, featured: bool = False) -> list[db.EventDetail]:
+    if featured:
+        events = session.exec(select(db.Event).where(db.Event.featured == True).offset(offset).limit(limit).order_by(db.Event.date)).all()
+    else:
+        events = session.exec(select(db.Event).offset(offset).limit(limit).order_by(db.Event.date)).all()
     return events
 
 @app.post("/events")
