@@ -1,7 +1,8 @@
+import auth
+
 from fastapi import FastAPI, Depends, HTTPException
 from fastapi.security import OAuth2PasswordRequestForm
 from models import Event, EventResponse, User, UserInDB
-from auth import get_current_user, get_user, fake_hash_password
 from typing import Annotated    
 
 EVENTS = [
@@ -25,8 +26,7 @@ async def get_events(limit: int|None = 10, offset: int|None = 0) -> list[EventRe
     return EVENTS[offset:offset+limit]
 
 @app.post("/events")
-async def create_event(event: Event, current_user: Annotated[User, Depends(get_current_user)]) -> EventResponse:
-    print(current_user)
+async def create_event(event: Event, current_user: Annotated[User, Depends(auth.get_current_user)]) -> EventResponse:
     event_data = event.model_dump()
     event_data["id"] = len(EVENTS) + 1
     EVENTS.append(event_data)
@@ -41,11 +41,8 @@ async def get_event(event_id: int) -> EventResponse:
 
 @app.post("/login")
 async def login(form_data: Annotated[OAuth2PasswordRequestForm, Depends()]):
-    user = get_user(form_data.username)
+    user = auth.authenticate_user(form_data.username, form_data.password)
     if not user:
         raise HTTPException(status_code=400, detail="Incorrect username or password")
-    user = UserInDB(**user)
-    hashed_password = fake_hash_password(form_data.password)
-    if not hashed_password == user.hashed_password:
-        raise HTTPException(status_code=400, detail="Incorrect username or password")
-    return {"access_token": user.email, "token_type": "bearer"}
+    access_token = auth.create_access_token(data={"sub": user.email})
+    return auth.Token(access_token=access_token, token_type="bearer")
