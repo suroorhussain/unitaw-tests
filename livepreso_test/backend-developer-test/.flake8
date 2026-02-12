@@ -1,0 +1,5 @@
+[flake8]
+ignore =
+    # E501 (80 char line length) -- black is in charge of this and sometimes
+    # strays over the pep8 limit. we are OK with this.
+    E501,
