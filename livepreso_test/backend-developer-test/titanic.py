@@ -1,25 +1,30 @@
 """
 Hello from LivePreso :) This is the file you should be editing. Good luck!
 """
+import pandas as pd
 
 path = "./titanic.csv"
 
+df = pd.read_csv(path)
 
 def number_of_passengers():
-    return 900
+    return len(df)
 
 
 def total_fare_paid():
-    return 30000
+    return df["Fare"].sum()
 
 
 def median_fare():
-    return 15
+    return df["Fare"].median()
 
 
 def cherbourg_survival_rate():
-    return 0.5
+    cherbourg_passangers = df[df["Embarked"] == "C"]
+    cherbourg_survivors = cherbourg_passangers[cherbourg_passangers["Survived"] == 1]
+    return len(cherbourg_survivors) / len(cherbourg_passangers)
 
 
 def passenger_class_by_survival():
-    return [2, 3, 1]
+    class_survival = df.groupby("Pclass")["Survived"].mean().sort_values(ascending=False)
+    return class_survival.index.to_list()

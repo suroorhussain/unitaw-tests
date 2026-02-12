@@ -2,3 +2,4 @@ black
 flake8
 pytest
 reorder-python-imports
+pandas==3.0.0
